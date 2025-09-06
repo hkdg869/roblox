@@ -1,0 +1,127 @@
+getgenv().Players = game:GetService("Players")
+getgenv().playerData = game:GetService("Players").LocalPlayer:WaitForChild("PlayerData")
+getgenv().ReplicatedStorage = game:GetService("ReplicatedStorage")
+getgenv().RunService = game:GetService("RunService")
+getgenv().MarketplaceService = game:GetService("MarketplaceService")
+getgenv().RemoteEvent = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent")
+getgenv().TweenService = game:GetService("TweenService")
+getgenv().PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+local Humanoid, Animator
+getgenv().player = Players.LocalPlayer
+getgenv().purchasedEmotesFolder = playerData:WaitForChild("Purchased"):WaitForChild("Emotes")
+getgenv().Remote = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("RemoteEvent")
+
+--=Hub=
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Nyansaken Hub",
+   Icon = 119855670079790,
+   LoadingTitle = "Loading Nyansaken Hub...",
+   LoadingSubtitle = "by LQK",
+   ShowText = "Nyansaken",
+   Theme = "Default",
+   ToggleUIKeybind = "K",
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "NyansakenHub",
+      FileName = "Nyansaken Hub"
+   },
+   Discord = {
+      Enabled = true,
+      Invite = "dsc.gg/nyansaken-hub",
+      RememberJoins = true
+   },
+   KeySystem = false, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Nyan-System",
+      Subtitle = "Key System",
+      Note = "(dsc.gg/nyansaken-hub) - Join our discord right now", -- Use this to tell the user how to get a key
+      FileName = "nyansakenkey", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"GHOSTINGCFRAME", "NYAN", "SIGMASAKEN", "GUESTIV", "FAKELAG", "TIMELESS", "NEWAUTOBLOCK"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+   }
+})
+
+-- Tabs
+local Combat = Window:CreateTab("Combat", "swords")
+local Generators = Window:CreateTab("Generators", "package-2")
+local ESP = Window:CreateTab("ESP", "scan-eye")
+local StaminaSet = Window:CreateTab("Stamina Settings", "footprints")
+local Aimbot = Window:CreateTab("Aimbot", "crosshair")
+local Miscs = Window:CreateTab("Misc", "circle-ellipsis")
+local AntiSlows = Window:CreateTab("Anti Slow", "accessibility")
+local AchieveTab = Window:CreateTab("Achievements", "medal")
+
+-- == Variables ==
+local genEnabled = false
+local genInterval = 1.25
+local re = true
+local Check = false
+local lt = 0
+
+-- == UI Elements ==
+local autoGenToggle = Generators:CreateToggle({
+	Name = "Auto Do Generator",
+	CurrentValue = genEnabled,
+	Flag = "AutoGenToggle",
+	Callback = function(Value)
+		genEnabled = Value
+	end,
+})
+
+local genIntervalSlider = Generators:CreateSlider({
+	Name = "Do Generator Interval (Seconds)",
+	Range = {1, 15},
+	Increment = 0.25,
+	Suffix = "s",
+	CurrentValue = genInterval,
+	Flag = "GenIntervalSlider",
+	Callback = function(Value)
+		genInterval = Value
+	end,
+})
+
+-- == Hook RF/RE để detect vào/ra gen + cooldown ==
+local Old
+Old = hookmetamethod(game, "__namecall", function(Self, ...)
+	local Args = { ... }
+	local Method = getnamecallmethod()
+	if not checkcaller() and typeof(Self) == "Instance" then
+		if Method == "InvokeServer" or Method == "FireServer" then
+			if tostring(Self) == "RF" then
+				if Args[1] == "enter" then
+					Check = true
+				elseif Args[1] == "leave" then
+					Check = false
+				end
+			elseif tostring(Self) == "RE" then
+				lt = os.clock()
+			end
+		end
+	end
+	return Old(Self, unpack(Args))
+end)
+
+-- == Auto Generator Loop ==
+game:GetService("RunService").Stepped:Connect(function()
+	if genEnabled and Check and re and os.clock() - lt >= genInterval then
+		re = false
+		task.spawn(function()
+			for _, gen in ipairs(workspace.Map.Ingame:WaitForChild("Map"):GetChildren()) do
+				if gen.Name == "Generator" and gen:FindFirstChild("Remotes") then
+					gen.Remotes.RE:FireServer()
+				end
+			end
+			task.wait(genInterval)
+			re = true
+		end)
+	end
+end)
+
+-- === ESP Toggles ===
+local killers
